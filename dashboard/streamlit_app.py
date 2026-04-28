@@ -19,7 +19,7 @@ API_URL = os.environ.get("API_URL", "http://localhost:8000")
 HTTP_TIMEOUT = float(os.environ.get("HTTP_TIMEOUT", "60"))
 
 st.set_page_config(
-    page_title="Sales Forecasting Dashboard",
+    page_title="Forecasting Dashboard",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
