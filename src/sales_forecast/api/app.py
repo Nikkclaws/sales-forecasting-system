@@ -19,7 +19,9 @@ from .schemas import (
     HolidayImpactResponse,
     MetricsResponse,
     PredictResponse,
+    RankingsResponse,
     StateMetrics,
+    StateRankings,
     TrainRequest,
     TrainResponse,
     TrainStatus,
@@ -237,6 +239,37 @@ def create_app(cfg: Config | None = None) -> FastAPI:
             content=pdf_bytes,
             media_type="application/pdf",
             headers={"Content-Disposition": f'attachment; filename="report_{state}.pdf"'},
+        )
+
+    @app.get("/rankings", response_model=RankingsResponse, tags=["models"])
+    def rankings():
+        s: ForecastService = app.state.service
+        if not s.is_ready():
+            raise HTTPException(
+                status_code=503,
+                detail="No trained model registry is loaded. Call POST /train first.",
+            )
+        meta = s.metadata
+        winner_counts: dict[str, int] = {}
+        states_data: list[StateRankings] = []
+        for state, info in meta.get("states", {}).items():
+            ranks = info.get("rankings") or []
+            if not ranks:
+                continue
+            winner = ranks[0]["model"]
+            winner_counts[winner] = winner_counts.get(winner, 0) + 1
+            states_data.append(
+                StateRankings(
+                    state=state,
+                    selected_models=info.get("selected_models", []),
+                    ensemble_weights=info.get("ensemble_weights", {}),
+                    rankings=ranks,
+                )
+            )
+        return RankingsResponse(
+            registry_version=s.loaded_version,
+            overall_winner_counts=dict(sorted(winner_counts.items(), key=lambda kv: -kv[1])),
+            states=states_data,
         )
 
     @app.get("/metrics", response_model=MetricsResponse, tags=["models"])
