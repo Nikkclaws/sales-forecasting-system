@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    image: sales-forecast:latest
+    container_name: sf_api
+    command: uvicorn sales_forecast.api.app:app --host 0.0.0.0 --port 8000 --workers 2
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./logs:/app/logs
+      - ./data:/app/data:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+
+  dashboard:
+    image: sales-forecast:latest
+    container_name: sf_dashboard
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      - API_URL=http://api:8000
+    command: >
+      streamlit run dashboard/streamlit_app.py
+      --server.address=0.0.0.0
+      --server.port=8501
+      --server.headless=true
+    ports:
+      - "8501:8501"
