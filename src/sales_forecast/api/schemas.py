@@ -107,3 +107,30 @@ class StateMetrics(BaseModel):
 class MetricsResponse(BaseModel):
     registry_version: str
     states: list[StateMetrics]
+
+
+class ModelRankRow(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    rank: int
+    model: str
+    rmse: float
+    mae: float
+    mape: float
+    smape: float
+    rating_rmse: float
+    rating_mae: float
+    rating_mape: float
+    rating_composite: float
+
+
+class StateRankings(BaseModel):
+    state: str
+    selected_models: list[str]
+    ensemble_weights: dict[str, float]
+    rankings: list[ModelRankRow]
+
+
+class RankingsResponse(BaseModel):
+    registry_version: str
+    overall_winner_counts: dict[str, int]
+    states: list[StateRankings]

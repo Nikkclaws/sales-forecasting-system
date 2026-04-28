@@ -34,6 +34,7 @@ class StateReport:
     history_weeks: int
     cv_metrics: dict[str, dict[str, list[float]]] = field(default_factory=dict)
     aggregate_metrics: dict[str, dict[str, float]] = field(default_factory=dict)
+    rankings: list[dict[str, Any]] = field(default_factory=list)
     selected_models: list[str] = field(default_factory=list)
     ensemble_weights: dict[str, float] = field(default_factory=dict)
     artifacts: dict[str, str] = field(default_factory=dict)
@@ -41,6 +42,54 @@ class StateReport:
     drift: dict[str, Any] = field(default_factory=dict)
     duration_seconds: float = 0.0
     error: str | None = None
+
+
+def _compute_rankings(
+    aggregate_metrics: dict[str, dict[str, float]],
+) -> list[dict[str, Any]]:
+    """Return a ranked leaderboard with normalized 0-100 accuracy ratings per model.
+
+    Rating per metric = 100 * best / model_value (clipped to [0, 100]).
+    Composite rating = mean of available metric ratings (RMSE/MAE/MAPE).
+    Models are sorted ascending by RMSE; rank 1 is the best.
+    """
+    if not aggregate_metrics:
+        return []
+
+    # Per-metric "best" (lower is better for RMSE/MAE/MAPE/SMAPE).
+    metric_keys = ["rmse", "mae", "mape", "smape"]
+    bests: dict[str, float] = {}
+    for k in metric_keys:
+        vals = [m.get(k) for m in aggregate_metrics.values() if k in m and np.isfinite(m.get(k, np.nan))]
+        if vals:
+            bests[k] = float(min(vals))
+
+    leaderboard: list[dict[str, Any]] = []
+    for model, metrics in aggregate_metrics.items():
+        ratings: dict[str, float] = {}
+        for k, best in bests.items():
+            v = metrics.get(k)
+            if v is None or not np.isfinite(v) or v <= 0:
+                continue
+            ratings[k] = float(np.clip(100.0 * best / v, 0.0, 100.0))
+        composite = float(np.mean(list(ratings.values()))) if ratings else 0.0
+        leaderboard.append(
+            {
+                "model": model,
+                "rmse": float(metrics.get("rmse", float("nan"))),
+                "mae": float(metrics.get("mae", float("nan"))),
+                "mape": float(metrics.get("mape", float("nan"))),
+                "smape": float(metrics.get("smape", float("nan"))),
+                "rating_rmse": ratings.get("rmse", 0.0),
+                "rating_mae": ratings.get("mae", 0.0),
+                "rating_mape": ratings.get("mape", 0.0),
+                "rating_composite": round(composite, 2),
+            }
+        )
+    leaderboard.sort(key=lambda r: r["rmse"] if np.isfinite(r["rmse"]) else float("inf"))
+    for i, row in enumerate(leaderboard, start=1):
+        row["rank"] = i
+    return leaderboard
 
 
 @dataclass
@@ -105,6 +154,7 @@ class TrainingPipeline:
                         "selected_models": r.selected_models,
                         "ensemble_weights": r.ensemble_weights,
                         "aggregate_metrics": r.aggregate_metrics,
+                        "rankings": r.rankings,
                         "history_weeks": r.history_weeks,
                         "error": r.error,
                     }
@@ -182,6 +232,7 @@ class TrainingPipeline:
         rep.aggregate_metrics = {
             m: {k: float(np.mean(v)) for k, v in metrics.items()} for m, metrics in per_model_metrics.items()
         }
+        rep.rankings = _compute_rankings(rep.aggregate_metrics)
 
         # ---- Rank models by mean RMSE; require at least min_validation_folds ---- #
         valid_models = {
@@ -248,6 +299,22 @@ class TrainingPipeline:
                     )
                 except Exception as e:  # noqa: BLE001
                     log.warning("SHAP explainability failed state=%s: %s", state, e)
+
+        # ---- Persist per-state model leaderboard for /rankings endpoint ---- #
+        if rep.rankings:
+            try:
+                save_json(
+                    {
+                        "state": state,
+                        "selected_models": rep.selected_models,
+                        "ensemble_weights": rep.ensemble_weights,
+                        "rankings": rep.rankings,
+                    },
+                    state_dir / "rankings.json",
+                )
+                artifacts["rankings"] = str(state_dir / "rankings.json")
+            except Exception as e:  # noqa: BLE001
+                log.warning("Failed to write rankings.json: %s", e)
 
         # ---- Persist OOF predictions for backtest endpoint ---- #
         if oof_preds:
@@ -414,6 +481,7 @@ def _report_to_dict(report: TrainingReport) -> dict:
                 "selected_models": r.selected_models,
                 "ensemble_weights": r.ensemble_weights,
                 "aggregate_metrics": r.aggregate_metrics,
+                "rankings": r.rankings,
                 "cv_metrics": r.cv_metrics,
                 "artifacts": r.artifacts,
                 "explainability": r.explainability,
