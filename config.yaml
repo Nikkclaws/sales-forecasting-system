@@ -1,0 +1,140 @@
+# =============================================================================
+# Sales Forecasting System - Configuration
+# =============================================================================
+
+project:
+  name: sales-forecast
+  random_seed: 42
+  log_level: INFO
+  log_dir: logs
+  artifacts_dir: artifacts
+  registry_dir: artifacts/registry
+
+data:
+  source_path: data/raw/sales.xlsx
+  date_col: Date
+  state_col: State
+  target_col: Total
+  category_col: Category
+  # Resample to weekly Sunday-anchored grid (matches dominant cadence in source data).
+  freq: W-SUN
+  min_history_weeks: 52  # states with fewer effective points are dropped
+
+preprocessing:
+  imputation:
+    # hybrid imputation: linear interpolation for short gaps, then forward-fill, then back-fill.
+    interpolation_method: linear
+    interpolation_limit: 4   # weeks
+    forward_fill_limit: 8    # weeks
+  outliers:
+    iqr_multiplier: 3.0
+    zscore_threshold: 3.0
+    # 'cap' clips, 'mark' adds a flag column without modifying values
+    strategy: cap
+
+features:
+  lags: [1, 2, 3, 4, 7, 14, 30]
+  rolling_windows: [4, 8, 13, 26]
+  rolling_stats: [mean, std, min, max]
+  fourier:
+    yearly:
+      period: 52.1775
+      order: 6
+    quarterly:
+      period: 13.0
+      order: 3
+  holidays:
+    country: US
+    add_distance_to_next_holiday: true
+  trend:
+    include_linear: true
+    include_changepoints: true
+    n_changepoints: 8
+  target_transform: log1p   # null | log1p
+
+cv:
+  strategy: walk_forward
+  initial_train_weeks: 104   # 2 years
+  horizon: 8                 # forecast horizon (weeks)
+  step: 8                    # walk-forward step
+  max_folds: 6
+  min_validation_folds: 3
+
+models:
+  enabled: [arima, sarima, prophet, xgboost, lstm]
+  arima:
+    order: [2, 1, 2]
+    enforce_stationarity: false
+    enforce_invertibility: false
+  sarima:
+    order: [1, 1, 1]
+    seasonal_order: [1, 1, 1, 52]
+    enforce_stationarity: false
+    enforce_invertibility: false
+  prophet:
+    yearly_seasonality: true
+    weekly_seasonality: false
+    daily_seasonality: false
+    seasonality_mode: multiplicative
+    interval_width: 0.9
+    holidays_country: US
+  xgboost:
+    optuna_trials: 30
+    optuna_timeout_seconds: 600
+    early_stopping_rounds: 50
+    base_params:
+      objective: reg:squarederror
+      tree_method: hist
+      eval_metric: rmse
+      n_estimators: 1000
+  lstm:
+    sequence_length: 26
+    horizon: 8
+    hidden_size: 64
+    num_layers: 2
+    dropout: 0.2
+    batch_size: 32
+    epochs: 80
+    learning_rate: 0.001
+    patience: 10
+
+ensemble:
+  top_k: 2
+  weighting: inverse_rmse   # inverse_rmse | softmax | equal | stacking
+  stacking:
+    method: ridge_simplex   # non-negative weights, sum to 1, projected LBFGS
+
+conformal:
+  enabled: true
+  alpha: 0.1                # target miscoverage; 0.1 = 90% PI
+  fallback_global_alpha: 0.1
+
+global_lstm:
+  enabled: false            # bonus head: a single LSTM with state embeddings
+  embed_dim: 8
+  hidden_size: 64
+  num_layers: 2
+  dropout: 0.2
+  epochs: 60
+  batch_size: 64
+  learning_rate: 0.001
+  patience: 8
+
+forecast:
+  horizon_weeks: 8
+  ci_alpha: 0.1   # 90% interval
+
+drift:
+  feature_window_weeks: 52
+  psi_threshold: 0.2
+  ks_pvalue_threshold: 0.05
+
+api:
+  host: 0.0.0.0
+  port: 8000
+  cors_origins: ["*"]
+  enable_prometheus: true
+
+dashboard:
+  port: 8501
+  page_title: "Sales Forecasting Dashboard"

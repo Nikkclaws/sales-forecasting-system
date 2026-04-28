@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sales-forecast"
+version = "0.1.0"
+description = "Production-grade time series forecasting system for weekly state-level sales"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+authors = [{ name = "Wanda Quinn" }]
+license = { text = "MIT" }
+dependencies = [
+    "pandas>=2.1",
+    "numpy>=1.26,<2.0",
+    "scipy>=1.11",
+    "scikit-learn>=1.4",
+    "statsmodels>=0.14",
+    "prophet>=1.1.5",
+    "xgboost>=2.0",
+    "optuna>=3.5",
+    "shap>=0.44",
+    "torch>=2.2",
+    "holidays>=0.45",
+    "openpyxl>=3.1",
+    "pyyaml>=6.0",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "joblib>=1.3",
+    "matplotlib>=3.8",
+    "tqdm>=4.66",
+    "python-multipart>=0.0.9",
+    "prometheus-client>=0.20",
+    "streamlit>=1.34",
+    "plotly>=5.20",
+    "reportlab>=4.1",
+    "requests>=2.32",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+    "mypy>=1.9",
+    "httpx>=0.27",
+    "types-PyYAML",
+]
+
+[project.scripts]
+sales-forecast-train = "sales_forecast.training.cli:main"
+sales-forecast-api = "sales_forecast.api.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W", "N", "SIM", "C4"]
+ignore = ["E501", "B008", "N806", "N803"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["N802"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::FutureWarning",
+    "ignore::UserWarning",
+]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+disallow_untyped_defs = false
+warn_unused_ignores = true
