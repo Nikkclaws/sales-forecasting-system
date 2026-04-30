@@ -1,0 +1,7 @@
+flowchart LR
+    H["Engineered features"] --> O["Optuna search\n30 trials"]
+    O --> P["best params\n(n_estimators,\nlr, max_depth,\nsubsample, ...)"]
+    P --> XGB["xgb.train(...)"]
+    XGB --> RP["Recursive\nmulti-step\nforecast"]
+    XGB --> SHAP["pred_contribs=True\nnative tree-SHAP"]
+    SHAP --> EXPL["Per-feature\ncontributions"]

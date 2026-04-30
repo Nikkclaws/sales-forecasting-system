@@ -1,0 +1,11 @@
+flowchart LR
+    HIST["Older history\nn-52 weeks"] --> PSI["PSI computation\n(binned KL-like)"]
+    REC["Recent 52 weeks"] --> PSI
+    HIST --> KS["KS-test\nks_2samp"]
+    REC --> KS
+    PSI --> FLAG{"PSI > 0.25\nor p < 0.05"}
+    KS --> FLAG
+    FLAG -- yes --> ALERT["/metrics shows drift=true"]
+    ALERT --> RT["POST /train\n(state)"]
+    RT --> NEWREG["New registry version\nv<TS>"]
+    FLAG -- no --> OK["No action"]

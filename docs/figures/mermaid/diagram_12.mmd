@@ -1,0 +1,6 @@
+flowchart LR
+    XGB["Trained XGBoost\nbooster"] --> CONT["pred_contribs=True\nnative tree-SHAP"]
+    CONT --> ROW["Per-row contribution\nmatrix"]
+    ROW --> AGG["Mean abs contribution\nper feature"]
+    AGG --> CHART["Feature importance\nbar chart"]
+    ROW --> EXPL["Per-prediction\nexplanation"]

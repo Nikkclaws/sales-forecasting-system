@@ -1,10 +1,20 @@
-flowchart TB
-    R[Raw Excel\n8 084 rows] --> V{Schema validation\nState / Date / Total / Category}
-    V -- pass --> P1[Date parser\nhandles datetime + DD-MM-YYYY strings]
-    V -- fail --> X[Raise ValueError]
-    P1 --> P2[Per-state weekly reindex\nW-SUN, full date range]
-    P2 --> P3[Hybrid imputation\ninterp lim 4 -> ffill lim 8 -> bfill]
-    P3 --> P4[Outlier detection\nIQR + Z-score]
-    P4 --> P5[Outlier capping\n at 1.5 x IQR or 3 sigma]
-    P5 --> P6[Weekly count guard\n>= 156 weeks]
-    P6 --> O[Cleaned per-state frame]
+flowchart LR
+    subgraph "Tier 1 - Storage"
+        REG[("Versioned\nmodel registry")]
+        DATA[("Raw + processed\ndata")]
+    end
+    subgraph "Tier 2 - Service"
+        API["FastAPI\nuvicorn :8000"]
+        PROM["Prometheus\n/metrics/prom"]
+    end
+    subgraph "Tier 3 - Presentation"
+        DASH["Streamlit dashboard\n:8501"]
+        SDK["curl / Python SDK"]
+        PDF["Generated PDFs"]
+    end
+    DATA --> API
+    REG  --> API
+    API  --> DASH
+    API  --> SDK
+    API  --> PROM
+    API  --> PDF

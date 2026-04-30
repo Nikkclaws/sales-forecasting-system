@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant C as Client
+    participant A as FastAPI
+    participant R as Registry
+    participant E as Ensemble
+    C->>A: GET /predict?state=Alabama&conformal=true
+    A->>R: read manifest.current
+    R-->>A: v20260428_111858
+    A->>R: load models + FeatureEngineer + conformal.json
+    R-->>A: artefacts
+    A->>E: ensemble.predict(horizon=8)
+    E-->>A: yhat[8]
+    A->>A: apply +/- q_h conformal half-widths
+    A-->>C: 200 OK with forecast + CI
+    A->>A: increment Prometheus counters

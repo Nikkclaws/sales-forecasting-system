@@ -1,0 +1,6 @@
+flowchart LR
+    Y["Series y_t"] --> G["Trend g(t)\npiecewise linear"]
+    Y --> S["Seasonality s(t)\nFourier yearly"]
+    Y --> Hol["Holidays h(t)\nUS federal"]
+    G & S & Hol --> SUM["y(t) = g + s + h + eps"]
+    SUM --> FCST["Forecast + uncertainty"]

@@ -1,0 +1,9 @@
+flowchart LR
+    M1["ARIMA OOF preds"] --> S["Concat OOF matrix (N_val, K)"]
+    M2["Prophet OOF preds"] --> S
+    M3["XGBoost OOF preds"] --> S
+    M4["LSTM OOF preds"] --> S
+    M5["SARIMA OOF preds"] --> S
+    S --> R["Ridge regression alpha=1e-3"]
+    R --> P["Simplex projection weights>=0, sum=1"]
+    P --> W["Final ensemble weights"]

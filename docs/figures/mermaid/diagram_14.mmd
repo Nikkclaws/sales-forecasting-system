@@ -1,0 +1,6 @@
+flowchart LR
+    T["Training run"] --> V["Stamp version\nv<UTC TIMESTAMP>"]
+    V --> S["Write\nartifacts/registry/v.../states/<State>/"]
+    S --> M["Update manifest.json\ncurrent: v..."]
+    M --> API["API + dashboard\nread current"]
+    API -. rollback .-> M2["manifest.current = v_old"]

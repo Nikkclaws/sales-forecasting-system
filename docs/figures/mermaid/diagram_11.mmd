@@ -1,0 +1,6 @@
+flowchart LR
+    A["CV residuals per (model, horizon)"] --> B["|residuals|"]
+    B --> C["Per-horizon (1-alpha) quantile q_h"]
+    C --> D["Persisted as conformal.json"]
+    E["Inference forecast yhat_h"] --> F["Interval yhat_h +/- q_h"]
+    D --> F

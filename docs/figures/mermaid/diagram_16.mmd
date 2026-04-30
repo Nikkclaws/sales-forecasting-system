@@ -1,0 +1,15 @@
+flowchart LR
+    R["Versioned\nregistry"] --> S["service.py\nload artefacts"]
+    S --> H["/health"]
+    S --> ST["/states"]
+    S --> P["/predict\n+ conformal"]
+    S --> PB["/predict/breakdown"]
+    S --> BT["/backtest\nfrom cv_predictions.csv"]
+    S --> HI["/holiday_impact\nfrom XGBoost SHAP"]
+    S --> M["/metrics\n+ drift status"]
+    S --> RK["/rankings\nfrom rankings.json"]
+    S --> REP["/report\nReportLab PDF"]
+    S --> PRM["/metrics/prom\nprometheus_client"]
+    T["POST /train"] --> Q["BackgroundTasks queue"]
+    Q --> P_RUN["pipeline._run_state"]
+    P_RUN --> R

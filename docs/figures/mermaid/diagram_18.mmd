@@ -1,0 +1,6 @@
+flowchart LR
+    PR["Push / PR"] --> RUFF["ruff format --check\n+ ruff check"]
+    PR --> PYT["pytest\n12 tests"]
+    RUFF --> CI["GitHub Actions\nlint-and-test"]
+    PYT --> CI
+    CI --> ST["Status check\non PR"]
