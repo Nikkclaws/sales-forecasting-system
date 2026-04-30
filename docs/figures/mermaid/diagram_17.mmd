@@ -1,0 +1,13 @@
+flowchart LR
+    subgraph "Local / single host"
+        DC["docker compose up"] --> CT1["api:8000"]
+        DC --> CT2["dashboard:8501"]
+        CT1 -.shared volume.- VOL[("artifacts/\nregistry")]
+        CT2 -.- VOL
+    end
+    subgraph "Cloud (HF Spaces / Render / Fly.io / Railway)"
+        IMG["Docker image"] --> SVC["api+dashboard\n(or two services)"]
+        SVC --> PV[("Persistent\nvolume")]
+        SVC --> NET[("Public TLS endpoint")]
+    end
+    DC -.-> IMG

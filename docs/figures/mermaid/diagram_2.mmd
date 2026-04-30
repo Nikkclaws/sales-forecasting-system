@@ -1,0 +1,20 @@
+flowchart LR
+    subgraph "Tier 1 - Storage"
+        REG[("Versioned\nmodel registry")]
+        DATA[("Raw + processed\ndata")]
+    end
+    subgraph "Tier 2 - Service"
+        API["FastAPI\nuvicorn :8000"]
+        PROM["Prometheus\n/metrics/prom"]
+    end
+    subgraph "Tier 3 - Presentation"
+        DASH["Streamlit dashboard\n:8501"]
+        SDK["curl / Python SDK"]
+        PDF["Generated PDFs"]
+    end
+    DATA --> API
+    REG  --> API
+    API  --> DASH
+    API  --> SDK
+    API  --> PROM
+    API  --> PDF

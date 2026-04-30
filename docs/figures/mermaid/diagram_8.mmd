@@ -1,0 +1,7 @@
+flowchart LR
+    Y["Scaled, log series"] --> SEQ["Sequence builder\nwindow = 52"]
+    SEQ --> L1["LSTM layer 1\nhidden 64"]
+    L1 --> L2["LSTM layer 2\nhidden 64"]
+    L2 --> FC["Linear -> 8"]
+    FC --> OUT["Direct multi-step\nforecast 8 weeks"]
+    OUT --> ES["Early stopping\non held-out tail"]

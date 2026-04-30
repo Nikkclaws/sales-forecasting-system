@@ -1,0 +1,10 @@
+flowchart LR
+    H["Cleaned weekly history"] --> L["Lag features\n1,2,3,4,7,14,30"]
+    H --> R["Rolling stats\n4,8,13,26 windows"]
+    H --> T["Trend + 8\nchangepoints"]
+    H --> F["Fourier\nyearly o6, quarterly o3"]
+    H --> C["Calendar\nweek/month/quarter/year"]
+    H --> Y["Holiday flag\n+ signed distance"]
+    L & R & T & F & C & Y --> X["Stacked design matrix\n~50 features"]
+    X --> XG["XGBoost"]
+    X --> LS["LSTM"]

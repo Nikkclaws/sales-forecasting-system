@@ -1,0 +1,25 @@
+flowchart LR
+    A["Excel raw data\nsales.xlsx"] --> B["DataLoader\nschema validation"]
+    B --> C["Preprocessor\nreindex / impute / outliers"]
+    C --> D["FeatureEngineer\nlags + rolling + Fourier + holidays"]
+
+    subgraph Training
+        D --> E["Walk-forward CV\nsame folds for all models"]
+        E --> F1["ARIMA"]
+        E --> F2["SARIMA"]
+        E --> F3["Prophet"]
+        E --> F4["XGBoost + Optuna"]
+        E --> F5["PyTorch LSTM"]
+        F1 & F2 & F3 & F4 & F5 --> G["Per-fold metrics\nRMSE, MAE, MAPE, sMAPE"]
+        G --> H["Aggregate metrics\n+ rankings + composite rating"]
+        H --> I["Top-K selector\n+ ensemble weights\n+ stacking"]
+        I --> J["Split-conformal\nhalf-widths"]
+        J --> K["Versioned registry\nartifacts/registry/v.../states/..."]
+    end
+
+    K --> L["FastAPI service\n11 endpoints"]
+    K --> M["Streamlit dashboard\n6 tabs"]
+
+    L --> N["REST clients"]
+    M --> O["Browser users"]
+    L --> P["/metrics/prom\nPrometheus"]

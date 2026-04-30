@@ -1,0 +1,7 @@
+flowchart LR
+    Y["Series y_t"] --> AR["AR component\nphi(B) y_t"]
+    Y --> I["I component\n(1-B)^d y_t"]
+    Y --> MA["MA component\ntheta(B) eps_t"]
+    AR & I & MA --> AIC["AIC search\np<=3, d<=1, q<=3"]
+    AIC --> FIT["Fit best (p,d,q)"]
+    FIT --> FCST["Multi-step\nforecast + native CI"]
