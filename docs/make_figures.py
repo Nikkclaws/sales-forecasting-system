@@ -47,9 +47,7 @@ df["Date"] = pd.to_datetime(df["Date"], errors="coerce", dayfirst=False)
 # A small fraction of rows have DD-MM-YYYY strings; salvage them.
 mask_bad = df["Date"].isna()
 if mask_bad.any():
-    df.loc[mask_bad, "Date"] = pd.to_datetime(
-        raw_dates[mask_bad].astype(str), dayfirst=True, errors="coerce"
-    )
+    df.loc[mask_bad, "Date"] = pd.to_datetime(raw_dates[mask_bad].astype(str), dayfirst=True, errors="coerce")
 df = df.dropna(subset=["Date"]).copy()
 df["Total"] = pd.to_numeric(df["Total"], errors="coerce")
 df = df.dropna(subset=["Total"])
@@ -106,9 +104,7 @@ ax.set_yticks(np.arange(len(states)))
 ax.set_yticklabels(states, fontsize=7)
 xticks = np.linspace(0, present.shape[1] - 1, num=10, dtype=int)
 ax.set_xticks(xticks)
-ax.set_xticklabels(
-    [present.columns[i].strftime("%Y-%m") for i in xticks], rotation=45, ha="right"
-)
+ax.set_xticklabels([present.columns[i].strftime("%Y-%m") for i in xticks], rotation=45, ha="right")
 ax.set_title("Data presence map (green = data present, white = missing week)")
 ax.set_xlabel("Week")
 save(fig, "missingness_map.png")
@@ -163,9 +159,7 @@ ax.set_ylim(-len(folds) - 0.5, -0.2)
 ax.set_yticks([])
 ax.set_xticks(range(0, n_weeks + 1, 2))
 ax.set_xlabel("Weeks (time index)")
-ax.set_title(
-    "Walk-forward cross-validation: expanding train, fixed-width validation window"
-)
+ax.set_title("Walk-forward cross-validation: expanding train, fixed-width validation window")
 ax.legend(loc="upper right", frameon=False)
 ax.grid(axis="x", linestyle="--", alpha=0.3)
 save(fig, "walk_forward_cv.png")
@@ -175,13 +169,7 @@ save(fig, "walk_forward_cv.png")
 # ---------------------------------------------------------------------------
 from statsmodels.tsa.seasonal import seasonal_decompose  # noqa: E402
 
-ca = (
-    df[df["State"] == "California"]
-    .sort_values("Date")
-    .set_index("Date")["Total"]
-    .resample("W-SUN")
-    .sum()
-)
+ca = df[df["State"] == "California"].sort_values("Date").set_index("Date")["Total"].resample("W-SUN").sum()
 ca = ca.replace(0, np.nan).interpolate(limit_direction="both").bfill().ffill()
 result = seasonal_decompose(ca, model="additive", period=52, extrapolate_trend="freq")
 fig, axes = plt.subplots(4, 1, figsize=(11, 9), sharex=True)
@@ -212,22 +200,16 @@ if manifest.exists():
 
     last8 = cv.tail(8).reset_index(drop=True)
     weights = {"lstm": 0.5024, "arima": 0.4976}
-    ensemble = (
-        weights["lstm"] * last8["lstm"].to_numpy()
-        + weights["arima"] * last8["arima"].to_numpy()
-    )
-    half = (
-        weights["lstm"] * np.array(conformal["lstm"]["half_widths"])
-        + weights["arima"] * np.array(conformal["arima"]["half_widths"])
+    ensemble = weights["lstm"] * last8["lstm"].to_numpy() + weights["arima"] * last8["arima"].to_numpy()
+    half = weights["lstm"] * np.array(conformal["lstm"]["half_widths"]) + weights["arima"] * np.array(
+        conformal["arima"]["half_widths"]
     )
     lower = ensemble - half
     upper = ensemble + half
 
     history = cv.tail(40)
     fig, ax = plt.subplots(figsize=(11, 5.5))
-    ax.plot(
-        history["date"], history["y_true"] / 1e6, color="#1e293b", label="Actual"
-    )
+    ax.plot(history["date"], history["y_true"] / 1e6, color="#1e293b", label="Actual")
     ax.plot(
         last8["date"],
         ensemble / 1e6,
@@ -335,12 +317,8 @@ if manifest.exists():
     sub = df_r.sort_values("rating_composite")
     fig, ax = plt.subplots(figsize=(8, 4.5))
     ax.barh(sub["model"], sub["rating_composite"], color="#4f46e5")
-    for x, m in zip(
-        sub["rating_composite"], sub["model"], strict=True
-    ):
-        ax.text(
-            x + 1, sub["model"].tolist().index(m), f"{x:.1f}", va="center", fontsize=9
-        )
+    for x, m in zip(sub["rating_composite"], sub["model"], strict=True):
+        ax.text(x + 1, sub["model"].tolist().index(m), f"{x:.1f}", va="center", fontsize=9)
     ax.set_xlim(0, 110)
     ax.set_xlabel("Composite accuracy rating (0\u2013100)")
     ax.set_title(f"Per-model composite rating \u2014 {rk['state']}")
@@ -365,9 +343,7 @@ if manifest.exists():
                 }
             )
     rk_df = pd.DataFrame(rows)
-    pivot = rk_df.pivot_table(
-        index="state", columns="model", values="rating_composite"
-    )
+    pivot = rk_df.pivot_table(index="state", columns="model", values="rating_composite")
     fig, ax = plt.subplots(figsize=(8, max(3, 0.45 * len(pivot))))
     im = ax.imshow(pivot.values, cmap="viridis", aspect="auto")
     ax.set_xticks(range(len(pivot.columns)))
@@ -378,9 +354,7 @@ if manifest.exists():
         for j in range(pivot.shape[1]):
             v = pivot.values[i, j]
             if not pd.isna(v):
-                ax.text(
-                    j, i, f"{v:.0f}", ha="center", va="center", color="white", fontsize=9
-                )
+                ax.text(j, i, f"{v:.0f}", ha="center", va="center", color="white", fontsize=9)
     ax.set_title("Composite accuracy rating per state \u00d7 model")
     fig.colorbar(im, ax=ax, label="Rating")
     save(fig, "rating_heatmap.png")
@@ -399,9 +373,7 @@ hdf = (
 df["week"] = df["Date"].dt.to_period("W-SUN").dt.start_time
 df["is_holiday_week"] = df["week"].isin(set(hdf["week"]))
 weekly = df.groupby(["State", "week"])["Total"].sum().reset_index()
-weekly = weekly.merge(
-    hdf[["week", "name"]].drop_duplicates("week"), on="week", how="left"
-)
+weekly = weekly.merge(hdf[["week", "name"]].drop_duplicates("week"), on="week", how="left")
 baseline = weekly.loc[weekly["name"].isna()].groupby("State")["Total"].mean()
 hw = (
     weekly.dropna(subset=["name"]).groupby("name")["Total"].mean()
@@ -483,9 +455,7 @@ save(fig, "feature_importance.png")
 # 17. Cumulative monthly sales heatmap (state x year-month)
 # ---------------------------------------------------------------------------
 df["ym"] = df["Date"].dt.to_period("M").astype(str)
-pivot_ym = (
-    df.pivot_table(index="State", columns="ym", values="Total", aggfunc="sum") / 1e6
-)
+pivot_ym = df.pivot_table(index="State", columns="ym", values="Total", aggfunc="sum") / 1e6
 top_states = state_totals.tail(15).index.tolist()
 pivot_ym = pivot_ym.loc[top_states]
 fig, ax = plt.subplots(figsize=(13, 5.5))
